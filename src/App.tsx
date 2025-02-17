@@ -1,47 +1,19 @@
-import { useEffect, useRef, useState } from "react";
-import { Todo } from "./types";
-import Add from "./components/Add";
+import { useState } from "react";
+
+interface UserI {
+  id: number;
+  level: number;
+  login?: boolean;
+}
 
 const App = () => {
-  // useState 사용시 가능하면 초기값을 주자
-  const [text, setText] = useState<string>("");
-  const [todos, setTodos] = useState<Todo[]>([]);
-  // useRef 로 변수 보관하기
-  const idCount = useRef(1);
+  // 초기값을 반드시 주자
+  // 처음에는 타입추론을 전적으로 믿기 보다는 제네릭으로 타입을 지정하자
+  const [count, setCount] = useState<number>(0);
+  const [point, setPoint] = useState<number | null>(0);
+  // 객체형 타입 정의하기
+  const [user, setUser] = useState<UserI | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setText(e.target.value);
-  };
-
-  const handleAdd = () => {
-    console.log(text);
-    const tempTodo: Todo = {
-      id: idCount.current++,
-      title: text,
-      content: "",
-      completed: false,
-    };
-    setTodos([...todos, tempTodo]);
-    setText("");
-  };
-
-  useEffect(() => {
-    console.log(todos);
-  }, [todos]);
-
-  // 할일을 추가해주는 함수
-  const addTodo = (text: string): void => {
-    console.log("할일 추가", text);
-  };
-
-  return (
-    <div>
-      <h1>Todo Service</h1>
-      <div>
-        <Add addTodo={addTodo} />
-      </div>
-    </div>
-  );
+  return <div>App</div>;
 };
-
 export default App;
