@@ -1,430 +1,295 @@
-# router
-
-- 설치
+# Recoil
 
 ```bash
-npm install react-router-dom
-npm i @types/react-router-dom
+npm i recoil
 ```
 
-- App.tsx
+- atoms 는 저장되는 변수
+- selector 는 atoms 가 변하는 것을 추적해서 atoms 의 값을 출력하는 용도
+- selector 는 필수가 아니라서 사용하지 않아도 무관
 
-```tsx
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+## 컨벤션
 
-function App(): JSX.Element {
-  return (
-    <BrowserRouter>
-      <div className="wrap">
-        <header>상단메뉴</header>
-        <Routes>
-          <Route path="/" element={<h1>Home</h1>}></Route>
-        </Routes>
-        <footer>하단</footer>
-      </div>
-    </BrowserRouter>
-  );
-}
+### Case 1
 
-export default App;
+- atom
+
+  - `/src/atoms` 폴더 생성
+
+- selector
+  - `/src/selector` 폴더 생성
+
+### Case 2
+
+- atom
+  - `/src/states` 폴더 생성
+
+## 기초 코드
+
+- `/src/atoms/countAtom.ts` 파일 생성
+
+```ts
+import { atom } from "recoil";
+
+// App 전체에서 관리할 값
+export const countAtom = atom<number>({
+  key: "countAtom",
+  default: 0,
+});
+
+export const loginAtom = atom<boolean>({
+  key: "loginAtom",
+  default: false,
+});
 ```
 
-- App.tsx 현재 코드
+- App 전체에 Recoil 접근 및 수정 적용
+  - main.tsx 혹은 index.tsx 에 작성
 
 ```tsx
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-import Home from "./pages/Index";
-import Company from "./pages/company/Index";
-import Ceo from "./pages/company/Ceo";
-import History from "./pages/company/History";
-import Partner from "./pages/company/Partner";
-import Location from "./pages/company/Location";
-import Good from "./pages/good/Good";
-import OCRUploader from "./pages/company/Test";
+import { createRoot } from "react-dom/client";
+import { RecoilRoot } from "recoil";
+import App from "./App.tsx";
+import "./index.css";
 
-// 협력사 타입
-export interface PartnerType {
-  name: string;
-  link: string;
-}
-
-function App(): JSX.Element {
-  const partnerList: PartnerType[] = [
-    { name: "삼성", link: "http://" },
-    { name: "LG", link: "http://" },
-    { name: "그린컴퓨터", link: "http://" },
-  ];
-  return (
-    <BrowserRouter>
-      <div className="wrap">
-        <header>상단메뉴</header>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/company">
-            <Route index element={<Company />} />
-            <Route path="ceo" element={<Ceo />} />
-            <Route
-              path="history"
-              element={<History title="좋은회사" year={1990} />}
-            />
-            <Route
-              path="partner"
-              element={<Partner partnerList={partnerList} />}
-            />
-            <Route path="location" element={<Location />} />
-          </Route>
-          <Route path="/good" element={<Good />} />
-        </Routes>
-        <footer>하단</footer>
-      </div>
-    </BrowserRouter>
-  );
-}
-
-export default App;
+createRoot(document.getElementById("root")!).render(
+  <RecoilRoot>
+    <App />
+  </RecoilRoot>,
+);
 ```
 
-- /src/pages/Index.tsx
+## countAtom 을 사용하는 tsx 생성
+
+- `/src/pages/CounterAtom.tsx` 파일 생성
 
 ```tsx
-const Index = (): JSX.Element => {
-  return <h1>홈페이지</h1>;
-};
+import { useRecoilState } from "recoil";
+import { countAtom, loginAtom } from "../atoms/countAtom";
 
-export default Index;
-```
-
-- /src/pages/company/Index.tsx
-
-```tsx
-const Index = (): JSX.Element => {
-  return <div>회사소개</div>;
-};
-
-export default Index;
-```
-
-- /src/pages/company/Ceo.tsx
-- http://localhost:5173/company/ceo?name=Kim&age=30
-
-```tsx
-import { useLocation, useSearchParams } from "react-router-dom";
-
-const Ceo = (): JSX.Element => {
-  // 현재 URI 의 주소 및 패스 알아내기
-  const location = useLocation();
-  console.log(location.pathname);
-  console.log(location.search);
-  console.log(location?.state);
-
-  //  쿼리스트링에서 갑을 추출
-  const [searchParams] = useSearchParams();
-  const name = searchParams.get("name");
-  const age = searchParams.get("age");
-
-  return (
-    <h3>
-      {name}님의 소개 : {age} 세
-    </h3>
-  );
-};
-export default Ceo;
-```
-
-- /src/pages/company/History.tsx
-
-```tsx
-interface HistoryProps {
+interface CounterAtomProps {
   children?: React.ReactNode;
-  title: string;
-  year: number;
 }
 
-const History = ({ title, year }: HistoryProps): JSX.Element => {
+const CounterAtom = (): JSX.Element => {
+  const [count, setCount] = useRecoilState(countAtom);
+  const [isLogin, setIsLogin] = useRecoilState(loginAtom);
+
   return (
-    <div>
-      History {title} {year}
+    <div className="text-xl px-10 py-4">
+      <h1>
+        CounterAtom :{" "}
+        {isLogin ? "로그인에 성공했습니다" : "로그인이 필요합니다"}
+      </h1>
+      <div className="flex gap-4 py-4">
+        <button onClick={() => setIsLogin(true)}>로그인</button>
+        <button onClick={() => setIsLogin(false)}>로그아웃</button>
+      </div>
+      <div className="flex gap-6">
+        <h3 className="text-red-500 text-3xl">{count}</h3>
+        <button
+          onClick={() => setCount(count + 1)}
+          className="px-4 py-1 border border-black"
+        >
+          count 증가
+        </button>
+        <button
+          onClick={() => setCount(count - 1)}
+          className="px-4 py-1 border border-black"
+        >
+          count 감소
+        </button>
+      </div>
     </div>
   );
 };
-
-export default History;
+export default CounterAtom;
 ```
 
-- /src/pages/company/Partner.tsx
+## 응용예제 ( Todo )
 
-```tsx
-import React from "react";
-import { IPartner } from "../../App";
+- `/src/atoms/todoListAtom.ts` 파일 생성
 
-interface PartnerProps {
-  children?: React.ReactNode;
-  partnerList: IPartner[];
+```ts
+import { atom } from "recoil";
+
+export interface TodoI {
+  id: number;
+  title: string;
+  completed: boolean;
 }
 
-const Partnership: React.FC<PartnerProps> = ({ partnerList }) => {
+export const todosAtom = atom<TodoI[]>({
+  key: "todosAtom",
+  default: [],
+});
+```
+
+- `/src/pages/TodoList.tsx` 파일 생성
+
+```tsx
+import { useRecoilState } from "recoil";
+import { todosAtom } from "../atoms/todoListAtom";
+import { useState } from "react";
+
+interface TodoListProps {
+  children?: React.ReactNode;
+}
+
+const TodoList: React.FC<TodoListProps> = () => {
+  const [todos, setTodos] = useRecoilState(todosAtom);
+  const [inputText, setInputText] = useState<string>("");
+
+  const addTodo = () => {
+    if (inputText.trim()) {
+      setTodos([
+        ...todos,
+        { id: Date.now(), title: inputText, completed: false },
+      ]);
+    }
+    setInputText("");
+  };
+
+  const toggleTodo = (id: number) => {
+    setTodos(
+      todos?.map(item =>
+        item?.id === id ? { ...item, completed: !item.completed } : item,
+      ),
+    );
+  };
+
+  const deleteTodo = (id: number) => {
+    setTodos(todos.filter(item => item.id !== id));
+  };
+
   return (
-    <div className="p-6">
-      <p className="text-2xl mb-6">Partnership</p>
-      <ul>
-        {partnerList?.map((item, index) => (
-          <li key={index} className="flex w-full gap-4 text-lg py-1">
-            <span>{item.name}</span>
-            <span>{item.link}</span>
+    <div className="flex flex-col px-10 py-4 gap-10">
+      <h1 className="text-3xl">TodoList</h1>
+      <div className="flex gap-4 items-center">
+        <input
+          type="text"
+          className="outline"
+          value={inputText}
+          onChange={e => setInputText(e.target.value)}
+        />
+        <button
+          onClick={addTodo}
+          className="font-semibold bg-black text-white px-4 py-1 rounded-sm"
+        >
+          추가
+        </button>
+      </div>
+      <ul className="flex flex-col gap-4">
+        {todos.map(item => (
+          <li key={item.id} className="flex w-1/3 items-center justify-between">
+            <span className="text-xl mr-6">{item.title}</span>
+            <div className="flex gap-4">
+              <span
+                className={`${item.completed ? "text-blue-500" : "text-red-500"} font-bold`}
+              >
+                {item.completed ? "완료" : "진행중"}
+              </span>
+              <button
+                onClick={() => toggleTodo(item.id)}
+                className="flex px-3 py-1 bg-blue-400 text-white font-semibold"
+              >
+                {item.completed ? "수정" : "완료"}
+              </button>
+              <button
+                onClick={() => deleteTodo(item.id)}
+                className="flex px-3 py-1 bg-red-400 text-white font-semibold"
+              >
+                삭제
+              </button>
+            </div>
           </li>
         ))}
       </ul>
     </div>
   );
 };
-export default Partnership;
+
+export default TodoList;
 ```
 
-- /src/pages/company/Location.tsx
+## Selector 의 이해
 
-```tsx
-const Location = (): JSX.Element => {
-  return <div>Location</div>;
-};
+- atom 의 새로운 값을 자동으로 계산해서 출력
+- atom 의 갱신을 위한 중복 코드를 줄여주고 여러 곳에서 사용한다
+- `/src/selector/countSelector.ts` 파일 생성
 
-export default Location;
+```ts
+import { selector } from "recoil";
+import { countAtom } from "../atoms/countAtom";
+
+export const countSelector = selector<string>({
+  key: "countSelector",
+  // atom 이 바뀌면 자동으로 연산한 결과를 돌려줌
+  get: ({ get }) => {
+    const count = get(countAtom);
+    return count % 2 == 0 ? "짝수" : "홀수";
+  },
+});
 ```
 
-- /src/pages/goods/Goods.tsx
+- CounterAtom.tsx 에서 selector 사용
 
 ```tsx
-import {
-  createSearchParams,
-  Link,
-  Outlet,
-  useNavigate,
-} from "react-router-dom";
+import { useRecoilState, useRecoilValue } from "recoil";
+import { countAtom, loginAtom } from "../atoms/countAtom";
+import { countSelector } from "../selector/countSelector";
 
-interface IQueryData {
-  name: string;
-  age: number;
-}
-
-interface IHiddenInfo {
-  memo: string;
-  watch: string;
-  favorite: string;
-}
-
-const Goods = (): JSX.Element => {
-  // router 주소를 전달해서 이동
-  const navigate = useNavigate();
-
-  // 1. 많은 사람들이 아래처럼 주소 및 쿼리 스트링을 만든다
-  const normalUrl = () => {
-    const url = `/company/ceo?name=hong&age=30`;
-    navigate(url);
-  };
-
-  // 2. 문법을 좋아하는 사람들은 아래처럼
-  const specialUrl = () => {
-    // 전송할 데이터
-    const queryData: IQueryData = {
-      name: "hong",
-      age: 20,
-    };
-    // 데이터를 직렬화( 문자열로 변환 ) 한다
-    const quertStr = createSearchParams({
-      ...queryData,
-      age: queryData.age.toString(),
-    }).toString();
-    // 몰래 보내는 정보도 담을 수 있어요
-    const fromUrl: IHiddenInfo = {
-      memo: "제품 페이지에서 왔어요",
-      watch: "제품 1을 보고 있었어요",
-      favorite: "제품 1과 제품 2에 관심을 가진 사용자예요",
-    };
-
-    navigate(
-      {
-        pathname: "/company/ceo",
-        search: quertStr,
-      },
-      { state: fromUrl },
-    );
-  };
-
-  return (
-    <div className="flex  flex-col p-6 gap-10">
-      <h1 className="text-3xl mb-4">제품소개</h1>
-      {/* Navigate */}
-      <div>
-        <button
-          onClick={normalUrl}
-          className="px-2 py-1 bg-slate-500 text-white font-semibold rounded-sm"
-        >
-          navigate 로 이동하기
-        </button>
-      </div>
-      <div>
-        <button
-          onClick={specialUrl}
-          className="px-2 py-1 bg-slate-500 text-white font-semibold rounded-sm"
-        >
-          추천하는 이동하기
-        </button>
-      </div>
-      {/* Link */}
-      <div className="flex gap-4">
-        <Link
-          to={"/goods/1"}
-          className="px-2 py-1 bg-blue-400 text-white font-semibold rounded-sm"
-        >
-          제품 1번
-        </Link>
-        <Link
-          to={"/goods/delete/1"}
-          className="px-2 py-1 bg-red-400 text-white font-semibold rounded-sm"
-        >
-          제품 삭제
-        </Link>
-        <Link
-          to={"/goods/modified/1"}
-          className="px-2 py-1 bg-green-400 text-white font-semibold rounded-sm"
-        >
-          제품 수정
-        </Link>
-      </div>
-      {/*  */}
-      <div>
-        <h2 className="border px-4 py-2">레이아웃 유지하고 화면 출력하기</h2>
-        <Outlet />
-      </div>
-    </div>
-  );
-};
-export default Goods;
-```
-
-- App.tsx
-
-```tsx
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-import Home from "./pages/Index";
-import Company from "./pages/company/Index";
-import Ceo from "./pages/company/Ceo";
-import History from "./pages/company/History";
-import Partnership from "./pages/company/Partnership";
-import Location from "./pages/company/Location";
-import Goods from "./pages/goods/Goods";
-import Detail from "./pages/goods/Detail";
-
-// 협력사 타입
-export interface IPartner {
-  name: string;
-  link: string;
-}
-
-function App(): JSX.Element {
-  const partnerList: IPartner[] = [
-    { name: "삼성", link: "http://" },
-    { name: "LG", link: "http://" },
-    { name: "애플", link: "http://" },
-  ];
-
-  return (
-    <BrowserRouter>
-      <div className="wrap">
-        <header>상단메뉴</header>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/company">
-            <Route index element={<Company />} />
-            <Route path="ceo" element={<Ceo />} />
-            <Route
-              path="history"
-              element={<History title={"좋은회사"} year={1990} />}
-            />
-            <Route
-              path="partnership"
-              element={<Partnership partnerList={partnerList} />}
-            />
-            <Route path="location" element={<Location />} />
-          </Route>
-          <Route path="/goods">
-            <Route index element={<Goods />} />
-            <Route path=":id" element={<Detail title={"좋은회사"} />} />
-            <Route path="delete:id" element={<h1>제품 삭제 페이지</h1>} />
-            <Route path="modified:id" element={<h1>제품 수정 페이지</h1>} />
-          </Route>
-        </Routes>
-        <footer>하단</footer>
-      </div>
-    </BrowserRouter>
-  );
-}
-export default App;
-```
-
-- /src/pages/goods/Detail.tsx
-
-```tsx
-import React from "react";
-import { useParams } from "react-router-dom";
-
-interface DetailProps {
-  children?: React.ReactNode;
-  title: string;
-}
-
-// const Detail: React.FC<DetailProps> = ({ title }) => {
-//     return <div>Detail</div>;
-//   };
-
-const Detail = ({ title }: DetailProps): JSX.Element => {
-  const { id } = useParams();
-
-  return (
-    <div>
-      {title}의 제품 {id}번 상세 정보
-    </div>
-  );
-};
-
-export default Detail;
-```
-
-- /src/components/Header.tsx
-- NavLink 활용 예시
-
-```tsx
-import { NavLink } from "react-router-dom";
-
-interface HeaderProps {
+interface CounterAtomProps {
   children?: React.ReactNode;
 }
 
-const Header = ({ children }: HeaderProps): JSX.Element => {
+const CounterAtom = (): JSX.Element => {
+  const [count, setCount] = useRecoilState(countAtom);
+  const [isLogin, setIsLogin] = useRecoilState(loginAtom);
+  // selector 사용하기
+  const nowCountValue = useRecoilValue(countSelector);
+
   return (
-    <div className="p-2 text-xl">
-      Header
-      <div className="px-4 py-10 text-xl font-semibold">
-        <ul className="flex gap-4">
-          <li className="flex gap-4">
-            <NavLink
-              className={({ isActive }) => (isActive ? "active-link" : "")}
-              to="/"
-            >
-              홈
-            </NavLink>
-            <NavLink
-              className={({ isActive }) => (isActive ? "active-link" : "")}
-              to="/goods"
-            >
-              제품
-            </NavLink>
-          </li>
-          <li>{children}</li>
-        </ul>
+    <div className="text-xl px-10 py-4">
+      <h1>
+        CounterAtom :{" "}
+        {isLogin ? "로그인에 성공했습니다" : "로그인이 필요합니다"}
+      </h1>
+      <div className="flex gap-4 py-4">
+        <button onClick={() => setIsLogin(true)}>로그인</button>
+        <button onClick={() => setIsLogin(false)}>로그아웃</button>
+      </div>
+      <div className="flex w-1/3 gap-6 items-center justify-between">
+        <div className="flex w-1/3 gap-4 items-center">
+          <h3 className="flex w-1/3 text-red-500 text-3xl text-nowrap">
+            {count}
+          </h3>
+          <h3 className="flex w-1/3 text-nowrap">
+            {count % 2 == 0 ? "짝수" : "홀수"}
+          </h3>
+          <h3 className="flex w-1/3 text-nowrap">{nowCountValue}</h3>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setCount(count + 1)}
+            className="px-4 py-1 border border-black text-lg"
+          >
+            count 증가
+          </button>
+          <button
+            onClick={() => setCount(count - 1)}
+            className="px-4 py-1 border border-black text-lg"
+          >
+            count 감소
+          </button>
+        </div>
       </div>
     </div>
   );
 };
-
-export default Header;
+export default CounterAtom;
 ```
+
+## todoList 에서 completed 가 true 인 목록 뽑기
+
+- `/src/selector/todoListSelector.ts` 파일 생성
